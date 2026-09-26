@@ -149,22 +149,27 @@ export const searchParams = {
     .boolean()
     .describe('Converts wages to annual salary')
     .default(false),
-  proxies: z
-    .union([
-      z.string().describe('Comma-separated list of proxies'),
-      z.array(z.string()).describe('Array of proxies'),
-    ])
-    .nullable()
-    .transform((val) => {
-      if (typeof val === 'string') {
-        return val;
-      }
-      if (Array.isArray(val)) {
-        return val.join(',');
-      }
-      return val;
-    })
-    .default(null),
+  // `proxies` is deliberately NOT a parameter. The server reads SMARTPROXY_URL
+  // from its own environment and injects it unconditionally, so there is no way
+  // for a caller to express an unproxied job-board request. Re-adding it here
+  // restores the 2026-09-13 bug; tests/proxyInvariant.test.mjs pins its absence.
+  metadataOnly: z
+    .boolean()
+    .describe(
+      'Strip each description from the response and stash it server-side for ' +
+        'fetch_descriptions. Keeps a high-volume search from overflowing the ' +
+        "caller's context."
+    )
+    .default(false),
+  maxResponseChars: z
+    .number()
+    .int()
+    .min(0)
+    .describe(
+      'Context-overflow safety net: if the serialized job array would exceed ' +
+        'this, drop jobs until it fits and report the shortfall. 0 disables it.'
+    )
+    .default(0),
   caCert: z
     .string()
     .nullable()

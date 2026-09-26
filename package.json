@@ -13,7 +13,7 @@
     "dev": "nodemon src/index.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/*.test.mjs"
   },
   "keywords": [
     "mcp",

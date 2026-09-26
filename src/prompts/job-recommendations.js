@@ -23,7 +23,8 @@ export const jobRecommendationsSchema = z.object({
 export const jobRecommendationsPrompt = (server) => server.prompt(
   'job_recommendations',
   'Get personalized job recommendations based on skills and preferences',
-  jobRecommendationsSchema,
+  // `.shape`, not the wrapped schema — see the note in prompts/search-jobs.js.
+  jobRecommendationsSchema.shape,
   (inputs) => {
     return {
       messages: [

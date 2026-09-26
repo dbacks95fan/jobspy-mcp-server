@@ -1,9 +1,42 @@
+# ABOUTME: CLI wrapper around JobSpy's scrape_jobs, invoked per search by the
+# ABOUTME: MCP server; prints one JSON array of postings on stdout.
 import csv
 import argparse
 import ast
 import json
 import sys
 from jobspy import scrape_jobs
+
+# JobSpy aborts the ENTIRE scrape when one posting carries a location it cannot
+# parse — a `nepal`-located remote listing is enough — which is fatal at the
+# volume this runs at: one bad row costs a whole search. Fall back to a
+# permissive value instead of raising.
+#
+# The patch targets the IMPORTED object, not the installed package files, so
+# `pip install -U python-jobspy` is unaffected and keeps the scraping rules
+# current.
+try:
+    import jobspy.model as _jobspy_model
+
+    _original_from_string = _jobspy_model.Country.from_string
+
+    def _tolerant_from_string(country_str, *args, **kwargs):
+        try:
+            return _original_from_string(country_str, *args, **kwargs)
+        except Exception:  # noqa: BLE001
+            print(f"unrecognized country {country_str!r}; falling back to WORLDWIDE",
+                  file=sys.stderr)
+            for name in ("WORLDWIDE", "WORLD_WIDE", "US", "USA"):
+                fallback = getattr(_jobspy_model.Country, name, None)
+                if fallback is not None:
+                    return fallback
+            raise
+
+    _jobspy_model.Country.from_string = staticmethod(_tolerant_from_string)
+except Exception as _patch_error:  # noqa: BLE001
+    # Reported, never silent: without the patch one unparseable location can
+    # still take a whole search down, and that must be visible in the log.
+    print(f"could not patch Country.from_string: {_patch_error}", file=sys.stderr)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Scrape jobs from various sites')
