@@ -91,12 +91,29 @@ def _linkedin_fetch(jobs, proxies, description_format, include_metadata):
                         "title": "", "company": ""})
         return out
 
-    scraper = LinkedIn()
-    if proxies:
-        try:
-            scraper.proxies = _proxy_dict(proxies)
-        except Exception:  # noqa: BLE001
-            pass
+    # Unproxied is a blocked path, not a degraded one: LinkedIn blocks a home
+    # IP quickly, and the server's proxy invariant forbids a direct request.
+    proxy = (_proxy_dict(proxies.strip() if isinstance(proxies, str) else proxies) or {}).get("https")
+    if not proxy:
+        for job in jobs:
+            out.append({"id": job["id"], "description": None, "source": UNAVAILABLE,
+                        "error": "no proxy configured; LinkedIn is never fetched directly",
+                        "title": "", "company": ""})
+        return out
+
+    from jobspy.model import DescriptionFormat, ScraperInput, Site
+
+    # The proxy goes to the CONSTRUCTOR: JobSpy builds its HTTP session there,
+    # so assigning `scraper.proxies` afterwards (as this used to) changed
+    # nothing and every request went out unproxied.
+    scraper = LinkedIn(proxies=proxy)
+    # `_get_job_details` reads `scraper_input.description_format` whenever
+    # LinkedIn returns a description. A full JobSpy search sets it; calling the
+    # method directly does not, and without this every SUCCESSFUL fetch raised
+    # AttributeError and was reported as unavailable (first live run, 2026-10-07).
+    scraper.scraper_input = ScraperInput(
+        site_type=[Site.LINKEDIN],
+        description_format=DescriptionFormat(description_format or "markdown"))
 
     for job in jobs:
         try:
