@@ -34,14 +34,14 @@ test('one search appends one line carrying the ordered ids', () => {
     const log = createSearchOrderLog({ dir });
     log.append({
       site: 'linkedin',
-      searchTerm: 'director of product',
+      searchTerm: 'director of engineering',
       location: 'remote',
       resultsWanted: 100,
       jobs: [{ id: 'c' }, { id: 'a' }, { id: 'b' }],
     });
     const [row] = readRows(dir);
     assert.equal(row.site, 'linkedin');
-    assert.equal(row.searchTerm, 'director of product');
+    assert.equal(row.searchTerm, 'director of engineering');
     assert.equal(row.location, 'remote');
     assert.equal(row.resultsWanted, 100);
     assert.equal(row.count, 3);
@@ -59,7 +59,7 @@ test('the log carries IDS ONLY — never a description or a salary', () => {
     const log = createSearchOrderLog({ dir });
     log.append({
       site: 'indeed',
-      searchTerm: 'product manager',
+      searchTerm: 'engineering manager',
       location: 'remote',
       resultsWanted: 50,
       jobs: [{ id: 'x', description: 'a very long description', minAmount: 200000 }],

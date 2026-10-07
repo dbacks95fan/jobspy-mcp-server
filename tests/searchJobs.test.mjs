@@ -30,7 +30,7 @@ function fakeDeps(jobs, { proxy = PROXY } = {}) {
 const job = (id, extra = {}) => ({
   id,
   site: 'indeed',
-  title: 'Product Manager',
+  title: 'Engineering Manager',
   company: 'Example',
   job_url: `https://example.com/${id}`,
   description: `Description for ${id}`,
